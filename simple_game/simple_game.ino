@@ -7,6 +7,9 @@
 
 #include <M5Stack.h>
 
+
+#include "network.h"
+
 int x = 0, y = 1;
 int energy = 0;
 bool falling = false;
@@ -26,7 +29,9 @@ void drawCount() {
 
 void setup() {
   M5.begin();
+  Serial.begin(115200);
   drawCount();
+  
 }
 
 bool leftIsWall(int x) {
