@@ -13,10 +13,10 @@ int x = 0, y = 21;
 int energy = 0;
 bool falling = false;
 
-const int wall_n = 2;
-const int wall_x[] = {-100, 400};
-const int wall_y1[] = {0, 0};
-const int wall_y2[] = {500, 500};
+const int wall_n = 3;
+const int wall_x[] = {-100, 200, 400};
+const int wall_y1[] = {0, 0, 0};
+const int wall_y2[] = {500, 50, 500};
 
 const int ground_n = 2;
 const int ground_y[] = {0, 50};
@@ -88,7 +88,8 @@ void drawWalls(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
   for (int i = 0; i < wall_n; i++) {
     int lcd_x = wall_x[i] - fr_x, lcd_y1 = fr_y - wall_y2[i], lcd_y2 = fr_y - wall_y1[i];
     if (lcd_x < 0 || lcd_x > M5.Lcd.width() || lcd_y1 > M5.Lcd.height() || lcd_y2 < 0) {
-      M5.Lcd.drawLine(old_wall_lcd_x[i], old_wall_lcd_y1[i], old_wall_lcd_x[i], old_wall_lcd_y2[i], TFT_BLACK);
+      if (old_wall_lcd_x[i] != -1 && old_wall_lcd_y1[i] != -1 && old_wall_lcd_y2[i] != -1) 
+      {M5.Lcd.drawLine(old_wall_lcd_x[i], old_wall_lcd_y1[i], old_wall_lcd_x[i], old_wall_lcd_y2[i], TFT_BLACK);}
       old_wall_lcd_x[i] = -1;
       old_wall_lcd_y1[i] = -1;
       old_wall_lcd_y2[i] = -1;
@@ -97,12 +98,13 @@ void drawWalls(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
       if (lcd_y1 < 0) {lcd_y1 = 0;}
       if (lcd_y2 > M5.Lcd.height()) {lcd_y2 = M5.Lcd.height();}
       if (!(lcd_x == old_wall_lcd_x[i] && lcd_y1 == old_wall_lcd_y1[i] && lcd_y2 == old_wall_lcd_y2[i])) {
-        M5.Lcd.drawLine(old_wall_lcd_x[i], old_wall_lcd_y1[i], old_wall_lcd_x[i], old_wall_lcd_y2[i], TFT_BLACK);
-        M5.Lcd.drawLine(lcd_x, lcd_y1, lcd_x, lcd_y2, tft_color);
+        if (old_wall_lcd_x[i] != -1 && old_wall_lcd_y1[i] != -1 && old_wall_lcd_y2[i] != -1) 
+        {M5.Lcd.drawLine(old_wall_lcd_x[i], old_wall_lcd_y1[i], old_wall_lcd_x[i], old_wall_lcd_y2[i], TFT_BLACK);}
         old_wall_lcd_x[i] = lcd_x;
         old_wall_lcd_y1[i] = lcd_y1;
         old_wall_lcd_y2[i] = lcd_y2;
       }
+      M5.Lcd.drawLine(lcd_x, lcd_y1, lcd_x, lcd_y2, tft_color);
     }
   }
 }
@@ -114,7 +116,8 @@ void drawGrounds(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
   for (int i = 0; i < ground_n; i++) {
     int lcd_y = fr_y - ground_y[i], lcd_x1 = ground_x1[i] - fr_x, lcd_x2 = ground_x2[i] - fr_x;
     if (lcd_y < 0 || lcd_y > M5.Lcd.height() || lcd_x1 > M5.Lcd.width() || lcd_x2 < 0) {
-      M5.Lcd.drawLine(old_ground_lcd_x1[i], old_ground_lcd_y[i], old_ground_lcd_x2[i], old_ground_lcd_y[i], TFT_BLACK);
+      if (old_ground_lcd_y[i] != -1 && old_ground_lcd_x1[i] != -1 && old_ground_lcd_x2[i] != -1) 
+      {M5.Lcd.drawLine(old_ground_lcd_x1[i], old_ground_lcd_y[i], old_ground_lcd_x2[i], old_ground_lcd_y[i], TFT_BLACK);}
       old_ground_lcd_y[i] = -1;
       old_ground_lcd_x1[i] = -1;
       old_ground_lcd_x2[i] = -1;
@@ -123,12 +126,13 @@ void drawGrounds(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
       if (lcd_x1 < 0) {lcd_x1 = 0;}
       if (lcd_x2 > M5.Lcd.width()) {lcd_x2 = M5.Lcd.width();}
       if (!(lcd_y == old_ground_lcd_y[i] && lcd_x1 == old_ground_lcd_x1[i] && lcd_x2 == old_ground_lcd_x2[i])) {
-        M5.Lcd.drawLine(old_ground_lcd_x1[i], old_ground_lcd_y[i], old_ground_lcd_x2[i], old_ground_lcd_y[i], TFT_BLACK);
-        M5.Lcd.drawLine(lcd_x1, lcd_y, lcd_x2, lcd_y, tft_color);
+        if (old_ground_lcd_y[i] != -1 && old_ground_lcd_x1[i] != -1 && old_ground_lcd_x2[i] != -1) 
+        {M5.Lcd.drawLine(old_ground_lcd_x1[i], old_ground_lcd_y[i], old_ground_lcd_x2[i], old_ground_lcd_y[i], TFT_BLACK);}
         old_ground_lcd_y[i] = lcd_y;
         old_ground_lcd_x1[i] = lcd_x1;
         old_ground_lcd_x2[i] = lcd_x2;
       }
+      M5.Lcd.drawLine(lcd_x1, lcd_y, lcd_x2, lcd_y, tft_color);
     }
   }
 }
@@ -153,10 +157,6 @@ void draw() {
   drawGoal(goal_x - fr_x, fr_y - goal_y);
   drawWalls(fr_x, fr_y);
   drawGrounds(fr_x, fr_y);
-  
-  if (goalReached(x, y)) {
-    inGame = false;
-  }
 }
 
 bool goalReached(int x, int y) {
@@ -196,12 +196,13 @@ bool topIsGround(int x, int y) {
 }
 
 void charaMoveLeft() {
-  while (!M5.BtnA.isReleased()) {
+  while (!M5.BtnA.isReleased() && inGame) {
     if(!leftIsWall(x, y)) {x--;}
     if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallLeft();}
     else {
       if (M5.BtnC.wasPressed()) {energy = 100; charaMoveLeftJump();}
     }
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
@@ -209,10 +210,11 @@ void charaMoveLeft() {
 }
 
 void charaMoveLeftJump() {
-  while (!M5.BtnA.isReleased() && !M5.BtnC.isReleased()) {
+  while (!M5.BtnA.isReleased() && !M5.BtnC.isReleased() && inGame) {
     if(!leftIsWall(x, y)) {x--;}
     if(energy > 0 && !topIsGround(x, y)) {y++; energy--;}
     else {falling = true; energy = 0; charaFallLeft();}
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
@@ -230,12 +232,13 @@ void charaMoveLeftJump() {
 }
 
 void charaMoveRight() {
-  while (!M5.BtnB.isReleased()) {
+  while (!M5.BtnB.isReleased() && inGame) {
     if(!rightIsWall(x, y)) {x++;}
     if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallRight();}
     else {
       if (M5.BtnC.wasPressed()) {energy = 100; charaMoveRightJump();}
     }
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
@@ -243,10 +246,11 @@ void charaMoveRight() {
 }
 
 void charaMoveRightJump() {
-  while (!M5.BtnB.isReleased() && !M5.BtnC.isReleased()) {
+  while (!M5.BtnB.isReleased() && !M5.BtnC.isReleased() && inGame) {
     if(!rightIsWall(x, y)) {x++;}
     if(energy > 0 && !topIsGround(x, y)) {y++; energy--;}
     else {falling = true; energy = 0; charaFallRight();}
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
@@ -264,13 +268,14 @@ void charaMoveRightJump() {
 }
 
 void charaJump() {
-  while (!M5.BtnC.isReleased()) {
+  while (!M5.BtnC.isReleased() && inGame) {
     if(energy > 0 && !topIsGround(x, y)) {
       y++; energy--;
       if (M5.BtnA.isPressed()) {charaMoveLeftJump();}
       else if (M5.BtnB.isPressed()) {charaMoveRightJump();}
     }
     else {falling = true; energy = 0; charaFall();}
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
@@ -279,12 +284,13 @@ void charaJump() {
 }
 
 void charaFall() {
-  while (falling) {
+  while (falling && inGame) {
     if (M5.BtnA.isPressed()) {charaFallLeft();}
     else if (M5.BtnB.isPressed()) {charaFallRight();}
     else {
       if (botIsGround(x, y)) {falling = false;}
       else {y--;}
+      if (goalReached(x, y)) {inGame = false;}
       draw();
       M5.update();
       delay(10);
@@ -293,10 +299,11 @@ void charaFall() {
 }
 
 void charaFallLeft() {
-  while (!M5.BtnA.isReleased() && falling) {
+  while (!M5.BtnA.isReleased() && falling && inGame) {
     if(!leftIsWall(x, y)) {x--;}
     if (botIsGround(x, y)) {falling = false;}
     else {y--;}
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
@@ -306,10 +313,11 @@ void charaFallLeft() {
 }
 
 void charaFallRight() {
-  while (!M5.BtnB.isReleased() && falling) {
+  while (!M5.BtnB.isReleased() && falling && inGame) {
     if(!rightIsWall(x, y)) {x++;} 
     if (botIsGround(x, y)) {falling = false;}
     else {y--;}
+    if (goalReached(x, y)) {inGame = false;}
     draw();
     M5.update();
     delay(10);
