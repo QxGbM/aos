@@ -31,7 +31,7 @@ void setup() {
   M5.begin();
   Serial.begin(115200);
   drawCount();
-  
+  //WiFiTest();
 }
 
 bool leftIsWall(int x) {

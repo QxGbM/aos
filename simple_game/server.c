@@ -6,12 +6,16 @@
 #include <string.h>
 #include <unistd.h>
 
+#define BUFSIZE 256
+#define PORTNO 2468
+
+
+
 void RaiseError(char *msg){
 	perror(msg);
 	exit(1);
 }
 
-#define BUFSIZE 256
 char recvBuffer[BUFSIZE];
 char sendBuffer[BUFSIZE];
 
@@ -55,41 +59,75 @@ int main( int argc, char *argv[]){
 		memset((char*)recvBuffer, 0, sizeof(recvBuffer));
 		if( read(newsockfd, recvBuffer, sizeof(recvBuffer)-1) < 0)
 			RaiseError("read() failed.");
-		//printf("%s", buffer);
-		int curPoint = atoi(recvBuffer);
-		int highPoint = 0;
 		
-		FILE *fptr = fopen("log.data", "r+");
-		fscanf(fptr, "%d", &highPoint);
+		// Client fetching the history
+		if( strcmp(recvBuffer, "history") == 0  ){
+			printf("Fetching history ...\n");
+			
+			int highPoint = 0;
+			
+			// read history score from log file
+			FILE *fptr = fopen("log.data", "r+");
+			fscanf(fptr, "%d", &highPoint);
+			fclose(fptr);
 		
-		if( highPoint > curPoint ){
-			printf("high = %d, cur = %d\n", highPoint, curPoint);
-			fprintf(fptr, "%d\n", curPoint);
-			printf("updated.\n");
+			// prepare the send buffer
+			sprintf(sendBuffer, "%d", highPoint);
 
+			if( write(newsockfd, sendBuffer, sizeof(sendBuffer)) < 0 )
+				RaiseError("write() failed.");
+
+
+			continue;
+		}
+		
+		// Client updating the score
+		int curPoint = atoi(recvBuffer);
+		unsigned int highPoint = 0;
+		
+		FILE *fptr = fopen("log.data", "r");
+		fscanf(fptr, "%u", &highPoint);
+		fclose(fptr);
+
+		if( highPoint > curPoint ){
+			printf("high = %u, cur = %d, updated.\n", highPoint, curPoint);
+			
+			// update the log file
+			FILE *fptr = fopen("log.data", "w");
+			fprintf(fptr, "%d\n", curPoint);
+			fclose(fptr);
+			
+			// prepare the send buffer
+			// because current score is faster than history score
+			// so server need to notify the client that
+			// "I will update it"
 			memset((char*)sendBuffer, 0, sizeof(sendBuffer));
 			sprintf(sendBuffer, "%d", 1);
 			printf("%s\n", sendBuffer);
 
 			// send to client
-			if( write(newsockfd, "1", 1) < 0 )
+			if( write(newsockfd, sendBuffer, sizeof(sendBuffer)) < 0 )
 				RaiseError("write() failed.");
 
 		}else{
-			printf("high = %d, cur = %d\n", highPoint, curPoint);
+			printf("high = %u, cur = %d, not updated\n", highPoint, curPoint);
 
-
+			// prepare the send buffer
+			// because the current score is not faster than history score
+			// so server need to notify the client that
+			// "I will not update it"
 			memset((char*)sendBuffer, 0, sizeof(sendBuffer));
 			sprintf(sendBuffer, "%d", 0);	
 			printf("%s\n", sendBuffer);
+
 			// send to client
-			if( write(newsockfd, "0", 1) < 0 )
+			if( write(newsockfd, sendBuffer, sizeof(sendBuffer)) < 0 )
 				RaiseError("write() failed.");
 
 
 		}
 
-		fclose(fptr);
+		
 	}	
 	// Close
 	close(sockfd);

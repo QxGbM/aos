@@ -1,37 +1,74 @@
+/* 
+ *  Project: Simple Game
+ *  Team: 810
+ *  Part: Liang Wei
+ *  
+ *  Usage:
+ *  
+ *  WiFiTest():
+ *    Just a test function, meaningless.
+ * 
+ *  int WiFiConnection():
+ *    You can use it to establish a WiFi connection.
+ *    Don't forget to replace the ssid, password and server variables with your true WiFi ssid and password.
+ *    Those variables can be found in the front of this source code.
+ *    It will return 0.
+ *    And I set the port number to 2468.
+ *    You can change it, though, just make sure it's identical with the value in the server program.
+ * 
+ *  double getHistory():
+ *    It can be used to get the best score from server.
+ *    I initialed the best score as -1 on the server.
+ *    Because -1 in unsigned integer is the maximum. 
+ *    It can make the comparison simpler.
+ *    This function returns a double float number in seconds.
+ *  
+ *  int updateScore(double timeinseconds)
+ *    When user completes a game, it can be used to take the current score ( time in seconds )
+ *    as argument, and compare the best score on server.
+ *    If the curent score is the most fast ever, server will return 1, otherwise 0.
+ *    And this function takes the return value of server as its return value.
+ */
 #include <WiFi.h>
 #include <M5Stack.h>
 #include <SPI.h>
 #include <stdio.h>
-
+#include "network.h"
 
 const char* ssid     = "shudo-lab";
 const char* password = "shudowireless";
 
 
 byte server[] = {172,16,0,36};
-const int serverPortNo = 2468;
+const int serverPortNo = 2468;  
+
+
+char sendBuffer[256];
+char recvBuffer[256];
 
 
 WiFiClient client;
 
-int test(){
-    Serial.println("\nHello world!");
+int WiFiTest(){
+    WiFiConnect();
+    Serial.println(fetchHistory());
+    updateScore(13.141);
+    Serial.println(fetchHistory());
+    updateScore(26.282);
+    Serial.println(fetchHistory());
 }
 
-int updateSocre(double time){
-
-    
-    
-
-    // We start by connecting to a WiFi network
-
+int WiFiConnect(){
+    delay(10);
     Serial.println();
     Serial.println();
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
+    // begin connection
     WiFi.begin(ssid, password);
 
+    // wait untile it's connected
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
@@ -42,37 +79,73 @@ int updateSocre(double time){
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
 
-  
-    // Connect to server   
-  
-    char sendBuffer[256];
-    
+    return 0;
+}
 
-    int thousandTime = time*1000;
-    itoa(thousandTime, sendBuffer, 10);
-    Serial.println(sendBuffer);
 
-    // Connect to server program 
-    // and write data
-    
+double fetchHistory(){
     if( client.connect(server, serverPortNo)){
-      Serial.println("connected.");
-      client.write(sendBuffer, 256);
+      //Serial.println("connected.");
       
-      int size = 10;
-      uint8_t* recvBuffer = (uint8_t*)malloc(size);
-      memset(recvBuffer, 0, sizeof(recvBuffer));
+      char sendBuffer[256];
       
-  
-      while( !client.available() );    
-      size = client.read(recvBuffer, size);  
-      
-      Serial.println("End receiving...");
-      Serial.println(recvBuffer[0]);
-      
-      free(recvBuffer); 
+      strcpy(sendBuffer, "history");
+      client.write(sendBuffer, sizeof(sendBuffer));
+      //Serial.println("sended.");
 
-      return recvBuffer[0] == 49 ? 1:0;
+      // Read data from server to recvBuffer
+      memset(recvBuffer, 0, sizeof(recvBuffer));
+
+      while( !client.available() );    // wait untile M5Stack can be read
+      client.read((uint8_t*)recvBuffer, sizeof(recvBuffer)); // read to recvBuffer
+      //Serial.println("End receiving history ...");
+
+      // conver the history score char array to integer
+      int historyResult;
+      sscanf(recvBuffer, "%d", &historyResult); // convert the char array to integer
+
+      // Because -1 is the default value, so if is -1, display 0 in screen
+      return historyResult==-1 ? 0 : historyResult/1000.0; 
+    }else{
+      Serial.println("connection failed.");  
+      return -1;
+    }
+}
+
+int updateScore(double timeinseconds){
+
+    // take the time in seconds as argument
+    // time it with 1000, convert it to integer
+    int timeinmilli = timeinseconds*1000;
+    itoa(timeinmilli, sendBuffer, 10);   // convert it to char array
+    
+
+    // connect to server program
+    if( client.connect(server, serverPortNo)){  
+      client.write(sendBuffer, 256);  // write the time data to server
+      
+
+      // receive the update result
+      // if it is the fastest score ever
+      // server will return 1 back
+      // if not
+      // server will return 0 back
+      memset(recvBuffer, 0, sizeof(recvBuffer));
+
+      while( !client.available() ) ; // wait until server send the data back
+      client.read((uint8_t*)recvBuffer, sizeof(recvBuffer));
+      
+
+
+      // convert the update result char array to integer
+      int updateResult;
+      sscanf(recvBuffer, "%d", &updateResult);
+
+      Serial.print(timeinseconds);
+      if( updateResult )  Serial.println(", updated.");
+      else Serial.println(", not updated.");
+      
+      return updateResult;         
       
     }else{
       Serial.println("connection failed.");  
