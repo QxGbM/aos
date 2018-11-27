@@ -142,16 +142,12 @@ void drawGrounds(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
 }
 
 void drawTime() {
-  M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);
-  int fh = M5.Lcd.fontHeight(1);
-  int sw = M5.Lcd.width();
-  int sh = M5.Lcd.height();
-  //M5.Lcd.fillRect(0.3 * sw, 0, 0.7 * sw, fh, TFT_WHITE);
-  M5.Lcd.setTextDatum(TC_DATUM);
   unsigned long t = millis() - trial_time;
   char str[256];
   sprintf(str, "  %d : %d :: %d  ", t / 60000, (t / 1000) % 60, t % 1000);
-  M5.Lcd.drawString(str, sw / 2, 0); 
+  M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);
+  M5.Lcd.setTextDatum(TC_DATUM);
+  M5.Lcd.drawString(str, M5.Lcd.width() / 2, 0);
 }
 
 void draw() {
