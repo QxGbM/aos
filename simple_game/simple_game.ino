@@ -9,22 +9,22 @@
 
 bool inGame = false;
 
-int x = 0, y = 21;
+int x = 20, y = 221;
 int energy = 0;
 bool falling = false;
 
-const int wall_n = 3;
-const int wall_x[] = {-100, 200, 400};
-const int wall_y1[] = {0, 0, 0};
-const int wall_y2[] = {500, 50, 500};
+const int wall_n = 23;
+const int wall_x[] = {0, 50, 100, 150, 200, 250, 250, 300, 300, 350, 350, 400, 400, 450, 450, 550, 600, 650, 650, 700, 700, 750, 800};
+const int wall_y1[] = {0, 0, 400, 450, 50, 100, 450, 150, 400, 350, 550, 200, 600, 250, 650, 250, 200, 150, 350, 100, 400, 450, 0};
+const int wall_y2[] = {1000, 50, 450, 500, 100, 150, 500, 200, 450, 400, 600, 250, 650, 300, 700, 300, 250, 200, 400, 150, 450, 500, 1000};
 
-const int ground_n = 2;
-const int ground_y[] = {0, 50};
-const int ground_x1[] = {-100, 200};
-const int ground_x2[] = {400, 400};
+const int ground_n = 27;
+const int ground_y[] = {0, 50, 100, 100, 150, 150, 200, 200, 200, 250, 250, 300, 350, 350, 400, 400, 400, 450, 450, 450, 500, 500, 550, 600, 650, 700, 700};
+const int ground_x1[] = {0, 50, 200, 700, 250, 650, 0, 300, 600, 400, 550, 450, 350, 600, 50, 300, 650, 100, 250, 700, 150, 750, 300, 350, 400, 450, 650};
+const int ground_x2[] = {800, 200, 250, 800, 300, 700, 200, 400, 650, 450, 600, 550, 400, 650, 100, 350, 700, 150, 300, 750, 250, 800, 350, 400, 450, 600, 800};
 
-const int goal_x = 350;
-const int goal_y = 71;
+const int goal_x = 770;
+const int goal_y = 721;
 
 int fr_x = 0, fr_y = 0;
 int fr_x_min, fr_x_max, fr_y_min, fr_y_max;
@@ -35,8 +35,8 @@ void adjustFrame() {
   else if (x - fr_x < 0.4 * sw) {fr_x = x - 0.4 * sw;}
 
   int sh = M5.Lcd.height();
-  if (y - fr_y > 0.6 * sh) {fr_y = y - 0.6 * sh;}
-  else if (y - fr_y < 0.4 * sh) {fr_y = y - 0.4 * sh;}
+  if (fr_y - y > 0.6 * sh) {fr_y = y + 0.6 * sh;}
+  else if (fr_y - y < 0.4 * sh) {fr_y = y + 0.4 * sh;}
 
   if (fr_x < fr_x_min) {fr_x = fr_x_min;}
   else if (fr_x > fr_x_max) {fr_x = fr_x_max;}
@@ -68,10 +68,12 @@ void drawChara(int lcd_x, int lcd_y, int tft_color = TFT_CYAN) {
 int old_goal_lcd_x = -1, old_goal_lcd_y = -1;
 void drawGoal(int lcd_x, int lcd_y, int tft_color = TFT_RED) {
   if (!(lcd_x == old_goal_lcd_x && lcd_y == old_goal_lcd_y)) {
-    M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y, old_goal_lcd_x, old_goal_lcd_y + 20, TFT_BLACK);
-    M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y, old_goal_lcd_x + 10, old_goal_lcd_y + 5, TFT_BLACK);
-    M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y + 10, old_goal_lcd_x + 10, old_goal_lcd_y + 5, TFT_BLACK);
-    
+    if (old_goal_lcd_x != -1 && old_goal_lcd_y != -1) {
+      M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y, old_goal_lcd_x, old_goal_lcd_y + 20, TFT_BLACK);
+      M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y, old_goal_lcd_x + 10, old_goal_lcd_y + 5, TFT_BLACK);
+      M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y + 10, old_goal_lcd_x + 10, old_goal_lcd_y + 5, TFT_BLACK);
+    }
+
     M5.Lcd.drawLine(lcd_x, lcd_y, lcd_x, lcd_y + 20, tft_color);
     M5.Lcd.drawLine(lcd_x, lcd_y, lcd_x + 10, lcd_y + 5, tft_color);
     M5.Lcd.drawLine(lcd_x, lcd_y + 10, lcd_x + 10, lcd_y + 5, tft_color);
@@ -378,7 +380,7 @@ void loop() {
   }
   else {
     if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
-      x = 0; y = 21;
+      x = 20; y = 221;
       inGame = true;
       draw();
       M5.update();
