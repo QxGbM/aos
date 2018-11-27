@@ -7,48 +7,202 @@
 
 #include <M5Stack.h>
 
-int x = 0, y = 1;
+bool inGame = false;
+
+int x = 0, y = 21;
 int energy = 0;
 bool falling = false;
 
-void drawCount() {
+const int wall_n = 2;
+const int wall_x[] = {-100, 400};
+const int wall_y1[] = {0, 0};
+const int wall_y2[] = {500, 500};
+
+const int ground_n = 2;
+const int ground_y[] = {0, 50};
+const int ground_x1[] = {-100, 200};
+const int ground_x2[] = {400, 400};
+
+const int goal_x = 350;
+const int goal_y = 71;
+
+int fr_x = 0, fr_y = 0;
+int fr_x_min, fr_x_max, fr_y_min, fr_y_max;
+
+void adjustFrame() {
+  int sw = M5.Lcd.width();
+  if (x - fr_x > 0.6 * sw) {fr_x = x - 0.6 * sw;}
+  else if (x - fr_x < 0.4 * sw) {fr_x = x - 0.4 * sw;}
+
+  int sh = M5.Lcd.height();
+  if (y - fr_y > 0.6 * sh) {fr_y = y - 0.6 * sh;}
+  else if (y - fr_y < 0.4 * sh) {fr_y = y - 0.4 * sh;}
+
+  if (fr_x < fr_x_min) {fr_x = fr_x_min;}
+  else if (fr_x > fr_x_max) {fr_x = fr_x_max;}
+
+  if (fr_y < fr_y_min) {fr_y = fr_y_min;}
+  else if (fr_y > fr_y_max) {fr_y = fr_y_max;}
+}
+
+int old_chara_lcd_x = -1, old_chara_lcd_y = -1;
+void drawChara(int lcd_x, int lcd_y, int tft_color = TFT_CYAN) {
+  if (!(lcd_x == old_chara_lcd_x && lcd_y == old_chara_lcd_y)) {
+    M5.Lcd.drawCircle(old_chara_lcd_x + 5, old_chara_lcd_y + 4, 4, TFT_BLACK);
+    M5.Lcd.drawLine(old_chara_lcd_x + 5, old_chara_lcd_y + 8, old_chara_lcd_x + 5, old_chara_lcd_y + 15, TFT_BLACK);
+    M5.Lcd.drawLine(old_chara_lcd_x, old_chara_lcd_y + 11, old_chara_lcd_x + 10, old_chara_lcd_y + 11, TFT_BLACK);
+    M5.Lcd.drawLine(old_chara_lcd_x + 5, old_chara_lcd_y + 15, old_chara_lcd_x, old_chara_lcd_y + 20, TFT_BLACK);
+    M5.Lcd.drawLine(old_chara_lcd_x + 5, old_chara_lcd_y + 15, old_chara_lcd_x + 10, old_chara_lcd_y + 20, TFT_BLACK);
+    
+    M5.Lcd.drawCircle(lcd_x + 5, lcd_y + 4, 4, tft_color);
+    M5.Lcd.drawLine(lcd_x + 5, lcd_y + 8, lcd_x + 5, lcd_y + 15, tft_color);
+    M5.Lcd.drawLine(lcd_x, lcd_y + 11, lcd_x + 10, lcd_y + 11, tft_color);
+    M5.Lcd.drawLine(lcd_x + 5, lcd_y + 15, lcd_x, lcd_y + 20, tft_color);
+    M5.Lcd.drawLine(lcd_x + 5, lcd_y + 15, lcd_x + 10, lcd_y + 20, tft_color);
+
+    old_chara_lcd_x = lcd_x;
+    old_chara_lcd_y = lcd_y;
+  }
+}
+
+int old_goal_lcd_x = -1, old_goal_lcd_y = -1;
+void drawGoal(int lcd_x, int lcd_y, int tft_color = TFT_RED) {
+  if (!(lcd_x == old_goal_lcd_x && lcd_y == old_goal_lcd_y)) {
+    M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y, old_goal_lcd_x, old_goal_lcd_y + 20, TFT_BLACK);
+    M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y, old_goal_lcd_x + 10, old_goal_lcd_y + 5, TFT_BLACK);
+    M5.Lcd.drawLine(old_goal_lcd_x, old_goal_lcd_y + 10, old_goal_lcd_x + 10, old_goal_lcd_y + 5, TFT_BLACK);
+    
+    M5.Lcd.drawLine(lcd_x, lcd_y, lcd_x, lcd_y + 20, tft_color);
+    M5.Lcd.drawLine(lcd_x, lcd_y, lcd_x + 10, lcd_y + 5, tft_color);
+    M5.Lcd.drawLine(lcd_x, lcd_y + 10, lcd_x + 10, lcd_y + 5, tft_color);
+    
+    old_goal_lcd_x = lcd_x;
+    old_goal_lcd_y = lcd_y;
+  }
+}
+
+int* old_wall_lcd_x;
+int* old_wall_lcd_y1;
+int* old_wall_lcd_y2;
+void drawWalls(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
+  for (int i = 0; i < wall_n; i++) {
+    int lcd_x = wall_x[i] - fr_x, lcd_y1 = fr_y - wall_y2[i], lcd_y2 = fr_y - wall_y1[i];
+    if (lcd_x < 0 || lcd_x > M5.Lcd.width() || lcd_y1 > M5.Lcd.height() || lcd_y2 < 0) {
+      M5.Lcd.drawLine(old_wall_lcd_x[i], old_wall_lcd_y1[i], old_wall_lcd_x[i], old_wall_lcd_y2[i], TFT_BLACK);
+      old_wall_lcd_x[i] = -1;
+      old_wall_lcd_y1[i] = -1;
+      old_wall_lcd_y2[i] = -1;
+    }
+    else {
+      if (lcd_y1 < 0) {lcd_y1 = 0;}
+      if (lcd_y2 > M5.Lcd.height()) {lcd_y2 = M5.Lcd.height();}
+      if (!(lcd_x == old_wall_lcd_x[i] && lcd_y1 == old_wall_lcd_y1[i] && lcd_y2 == old_wall_lcd_y2[i])) {
+        M5.Lcd.drawLine(old_wall_lcd_x[i], old_wall_lcd_y1[i], old_wall_lcd_x[i], old_wall_lcd_y2[i], TFT_BLACK);
+        M5.Lcd.drawLine(lcd_x, lcd_y1, lcd_x, lcd_y2, tft_color);
+        old_wall_lcd_x[i] = lcd_x;
+        old_wall_lcd_y1[i] = lcd_y1;
+        old_wall_lcd_y2[i] = lcd_y2;
+      }
+    }
+  }
+}
+
+int* old_ground_lcd_y;
+int* old_ground_lcd_x1;
+int* old_ground_lcd_x2;
+void drawGrounds(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
+  for (int i = 0; i < ground_n; i++) {
+    int lcd_y = fr_y - ground_y[i], lcd_x1 = ground_x1[i] - fr_x, lcd_x2 = ground_x2[i] - fr_x;
+    if (lcd_y < 0 || lcd_y > M5.Lcd.height() || lcd_x1 > M5.Lcd.width() || lcd_x2 < 0) {
+      M5.Lcd.drawLine(old_ground_lcd_x1[i], old_ground_lcd_y[i], old_ground_lcd_x2[i], old_ground_lcd_y[i], TFT_BLACK);
+      old_ground_lcd_y[i] = -1;
+      old_ground_lcd_x1[i] = -1;
+      old_ground_lcd_x2[i] = -1;
+    }
+    else {
+      if (lcd_x1 < 0) {lcd_x1 = 0;}
+      if (lcd_x2 > M5.Lcd.width()) {lcd_x2 = M5.Lcd.width();}
+      if (!(lcd_y == old_ground_lcd_y[i] && lcd_x1 == old_ground_lcd_x1[i] && lcd_x2 == old_ground_lcd_x2[i])) {
+        M5.Lcd.drawLine(old_ground_lcd_x1[i], old_ground_lcd_y[i], old_ground_lcd_x2[i], old_ground_lcd_y[i], TFT_BLACK);
+        M5.Lcd.drawLine(lcd_x1, lcd_y, lcd_x2, lcd_y, tft_color);
+        old_ground_lcd_y[i] = lcd_y;
+        old_ground_lcd_x1[i] = lcd_x1;
+        old_ground_lcd_x2[i] = lcd_x2;
+      }
+    }
+  }
+}
+
+void draw() {
+  /* Some coordinates display
   M5.Lcd.setTextFont(1);
-  M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+  M5.Lcd.setTextColor(TFT_BLACK, TFT_CYAN);
   int fh = M5.Lcd.fontHeight(1);
   int sw = M5.Lcd.width();
   int sh = M5.Lcd.height();
-  int cx1 = sw / 2 - 60, cx2 = sw / 2 + 60, cy = sh / 2;
-  M5.Lcd.fillRect(0, cy - fh / 2, 320, fh, TFT_BLACK);
-  M5.Lcd.setTextDatum(MC_DATUM);
-  M5.Lcd.drawNumber(x, cx1, cy);
-  M5.Lcd.drawNumber(y, cx2, cy);
+  int cx = sw / 2, cy = 0;
+  M5.Lcd.fillRect(0, 0, sw, cy + fh, TFT_CYAN);
+  M5.Lcd.setTextDatum(TC_DATUM);
+  char str[256];
+  sprintf(str, "x: %d, y: %d, frame: %d, %d", x, y, fr_x, fr_y);
+  M5.Lcd.drawString(str, cx, cy); 
+  */
+
+  adjustFrame();
+  drawChara(x - fr_x, fr_y - y);
+  drawGoal(goal_x - fr_x, fr_y - goal_y);
+  drawWalls(fr_x, fr_y);
+  drawGrounds(fr_x, fr_y);
+  
+  if (goalReached(x, y)) {
+    inGame = false;
+  }
 }
 
-void setup() {
-  M5.begin();
-  drawCount();
+bool goalReached(int x, int y) {
+  return x - goal_x <= 10 && goal_x - x <= 10  && y - goal_y <= 20 && goal_y - y <= 20;
 }
 
-bool leftIsWall(int x) {
-  return x == -999; 
+bool leftIsWall(int x, int y) {
+  for (int i = 0; i < wall_n; i++) {
+    if(x == wall_x[i] + 1 && y >= wall_y1[i] && y - 20 <= wall_y2[i])
+    {return true;}
+  }
+  return false; 
 }
 
-bool rightIsWall(int x) {
-  return x == 999;
+bool rightIsWall(int x, int y) {
+  for (int i = 0; i < wall_n; i++) {
+    if(x == wall_x[i] - 11 && y >= wall_y1[i] && y - 20 <= wall_y2[i])
+    {return true;}
+  }
+  return false; 
 }
 
-bool botIsGround(int y) {
-  return y == 1;
+bool botIsGround(int x, int y) {
+  for (int i = 0; i < ground_n; i++) {
+    if(y == ground_y[i] + 21 && x + 10 >= ground_x1[i] && x <= ground_x2[i])
+    {return true;}
+  }
+  return false;
+}
+
+bool topIsGround(int x, int y) {
+  for (int i = 0; i < ground_n; i++) {
+    if(y == ground_y[i] - 1 && x + 10 >= ground_x1[i] && x <= ground_x2[i])
+    {return true;}
+  }
+  return false;
 }
 
 void charaMoveLeft() {
   while (!M5.BtnA.isReleased()) {
-    if(!leftIsWall(x)) {x--;}
-    if(!botIsGround(y)) {falling = true; charaFallLeft();}
+    if(!leftIsWall(x, y)) {x--;}
+    if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallLeft();}
     else {
       if (M5.BtnC.wasPressed()) {energy = 100; charaMoveLeftJump();}
     }
-    drawCount();
+    draw();
     M5.update();
     delay(10);
   }
@@ -56,16 +210,16 @@ void charaMoveLeft() {
 
 void charaMoveLeftJump() {
   while (!M5.BtnA.isReleased() && !M5.BtnC.isReleased()) {
-    if(!leftIsWall(x)) x--; 
-    if(energy > 0) {y++; energy--;}
-    else {falling = true; charaFallLeft();}
-    drawCount();
+    if(!leftIsWall(x, y)) {x--;}
+    if(energy > 0 && !topIsGround(x, y)) {y++; energy--;}
+    else {falling = true; energy = 0; charaFallLeft();}
+    draw();
     M5.update();
     delay(10);
   }
   if (M5.BtnC.wasReleased()) {
-    if (!botIsGround(y)) {
-      falling = true; 
+    if (!botIsGround(x, y)) {
+      falling = true; energy = 0;
       if (M5.BtnA.wasReleased()) {charaFall();}
       else {charaFallLeft();}
     }
@@ -77,12 +231,12 @@ void charaMoveLeftJump() {
 
 void charaMoveRight() {
   while (!M5.BtnB.isReleased()) {
-    if(!rightIsWall(x)) {x++;}
-    if(!botIsGround(y)) {falling = true; charaFallRight();}
+    if(!rightIsWall(x, y)) {x++;}
+    if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallRight();}
     else {
       if (M5.BtnC.wasPressed()) {energy = 100; charaMoveRightJump();}
     }
-    drawCount();
+    draw();
     M5.update();
     delay(10);
   }
@@ -90,16 +244,16 @@ void charaMoveRight() {
 
 void charaMoveRightJump() {
   while (!M5.BtnB.isReleased() && !M5.BtnC.isReleased()) {
-    if(!rightIsWall(x)) {x++;}
-    if(energy > 0) {y++; energy--;}
-    else {falling = true; charaFallRight();}
-    drawCount();
+    if(!rightIsWall(x, y)) {x++;}
+    if(energy > 0 && !topIsGround(x, y)) {y++; energy--;}
+    else {falling = true; energy = 0; charaFallRight();}
+    draw();
     M5.update();
     delay(10);
   }
   if (M5.BtnC.wasReleased()) {
-    if (!botIsGround(y)) {
-      falling = true;
+    if (!botIsGround(x, y)) {
+      falling = true; energy = 0;
       if (M5.BtnB.wasReleased()) {charaFall();}
       else {charaFallRight();}
     }
@@ -111,18 +265,17 @@ void charaMoveRightJump() {
 
 void charaJump() {
   while (!M5.BtnC.isReleased()) {
-    if(energy > 0) {y++; energy--;}
-    else {falling = true;}
-    if(falling) {charaFall();}
-    else {
+    if(energy > 0 && !topIsGround(x, y)) {
+      y++; energy--;
       if (M5.BtnA.isPressed()) {charaMoveLeftJump();}
       else if (M5.BtnB.isPressed()) {charaMoveRightJump();}
     }
-    drawCount();
+    else {falling = true; energy = 0; charaFall();}
+    draw();
     M5.update();
     delay(10);
   }
-  if (!botIsGround(y)) {falling = true; charaFall();}
+  if (!botIsGround(x, y)) {falling = true; energy = 0; charaFall();}
 }
 
 void charaFall() {
@@ -130,9 +283,9 @@ void charaFall() {
     if (M5.BtnA.isPressed()) {charaFallLeft();}
     else if (M5.BtnB.isPressed()) {charaFallRight();}
     else {
-      if (botIsGround(y)) {falling = false;}
+      if (botIsGround(x, y)) {falling = false;}
       else {y--;}
-      drawCount();
+      draw();
       M5.update();
       delay(10);
     }
@@ -141,10 +294,10 @@ void charaFall() {
 
 void charaFallLeft() {
   while (!M5.BtnA.isReleased() && falling) {
-    if(!leftIsWall(x)) x--;
-    if (botIsGround(y)) {falling = false;}
+    if(!leftIsWall(x, y)) {x--;}
+    if (botIsGround(x, y)) {falling = false;}
     else {y--;}
-    drawCount();
+    draw();
     M5.update();
     delay(10);
   }
@@ -154,10 +307,10 @@ void charaFallLeft() {
 
 void charaFallRight() {
   while (!M5.BtnB.isReleased() && falling) {
-    if(!rightIsWall(x)) x++; 
-    if (botIsGround(y)) {falling = false;}
+    if(!rightIsWall(x, y)) {x++;} 
+    if (botIsGround(x, y)) {falling = false;}
     else {y--;}
-    drawCount();
+    draw();
     M5.update();
     delay(10);
   }
@@ -165,21 +318,65 @@ void charaFallRight() {
   else if (!M5.BtnB.isReleased()) {charaMoveRight();}
 }
 
+void setup() {
+  M5.begin();
+  inGame = true;
+  
+  fr_x_min = wall_x[0] - 50;
+  fr_x_max = wall_x[wall_n - 1] + 50 - M5.Lcd.width();
+  if (fr_x_max < fr_x_min) fr_x_max = fr_x_min;
+
+  fr_y_min = ground_y[0] - 50 + M5.Lcd.height();
+  fr_y_max = ground_y[ground_n - 1] + 50;
+  if (fr_y_max < fr_y_min) fr_y_max = fr_y_min;
+  
+  old_wall_lcd_x = (int*) malloc(wall_n * sizeof(int));
+  old_wall_lcd_y1 = (int*) malloc(wall_n * sizeof(int));
+  old_wall_lcd_y2 = (int*) malloc(wall_n * sizeof(int));
+  
+  old_ground_lcd_y = (int*) malloc(ground_n * sizeof(int));
+  old_ground_lcd_x1 = (int*) malloc(ground_n * sizeof(int));
+  old_ground_lcd_x2 = (int*) malloc(ground_n * sizeof(int));
+
+  memset(old_wall_lcd_x, -1, wall_n * sizeof(int));
+  memset(old_wall_lcd_y1, -1, wall_n * sizeof(int));
+  memset(old_wall_lcd_y2, -1, wall_n * sizeof(int));
+
+  memset(old_ground_lcd_y, -1, ground_n * sizeof(int));
+  memset(old_ground_lcd_x1, -1, ground_n * sizeof(int));
+  memset(old_ground_lcd_x2, -1, ground_n * sizeof(int));
+
+  draw();
+}
+
 void loop() {
-  if (M5.BtnA.wasPressed()) {
-    charaMoveLeft();
-  }
-  else if (M5.BtnB.wasPressed()) {
-    charaMoveRight();
-  }
-  else if (M5.BtnC.wasPressed() && !falling) {
-    energy = 100;
-    charaJump();
-  }
-  else if (falling) {
-    charaFall();
+  if (inGame) {
+    if (M5.BtnA.wasPressed()) {
+      charaMoveLeft();
+    }
+    else if (M5.BtnB.wasPressed()) {
+      charaMoveRight();
+    }
+    else if (M5.BtnC.wasPressed() && !falling) {
+      energy = 100;
+      charaJump();
+    }
+    else if (falling) {
+      charaFall();
+    }
+    else {
+      M5.update();
+    }
   }
   else {
-    M5.update();
+    if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
+      x = 0; y = 21;
+      inGame = true;
+      draw();
+      M5.update();
+    }
+    else {
+      M5.update();
+    }
   }
 }
