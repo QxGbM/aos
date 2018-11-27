@@ -6,12 +6,14 @@
   */
 
 #include <M5Stack.h>
+#include <time.h>
 
 bool inGame = false;
 
 int x = 20, y = 221;
 int energy = 0;
 bool falling = false;
+unsigned long trial_time;
 
 const int wall_n = 23;
 const int wall_x[] = {0, 50, 100, 150, 200, 250, 250, 300, 300, 350, 350, 400, 400, 450, 450, 550, 600, 650, 650, 700, 700, 750, 800};
@@ -139,30 +141,42 @@ void drawGrounds(int fr_x, int fr_y, int tft_color = TFT_YELLOW) {
   }
 }
 
-void draw() {
-  /* Some coordinates display
-  M5.Lcd.setTextFont(1);
-  M5.Lcd.setTextColor(TFT_BLACK, TFT_CYAN);
+void drawTime() {
+  M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);
   int fh = M5.Lcd.fontHeight(1);
   int sw = M5.Lcd.width();
   int sh = M5.Lcd.height();
-  int cx = sw / 2, cy = 0;
-  M5.Lcd.fillRect(0, 0, sw, cy + fh, TFT_CYAN);
+  //M5.Lcd.fillRect(0.3 * sw, 0, 0.7 * sw, fh, TFT_WHITE);
   M5.Lcd.setTextDatum(TC_DATUM);
+  unsigned long t = millis() - trial_time;
   char str[256];
-  sprintf(str, "x: %d, y: %d, frame: %d, %d", x, y, fr_x, fr_y);
-  M5.Lcd.drawString(str, cx, cy); 
-  */
-
-  adjustFrame();
-  drawChara(x - fr_x, fr_y - y);
-  drawGoal(goal_x - fr_x, fr_y - goal_y);
-  drawWalls(fr_x, fr_y);
-  drawGrounds(fr_x, fr_y);
+  sprintf(str, "  %d : %d :: %d  ", t / 60000, (t / 1000) % 60, t % 1000);
+  M5.Lcd.drawString(str, sw / 2, 0); 
 }
 
-bool goalReached(int x, int y) {
-  return x - goal_x <= 10 && goal_x - x <= 10  && y - goal_y <= 20 && goal_y - y <= 20;
+void draw() {
+  if (inGame) {
+    adjustFrame();
+    drawChara(x - fr_x, fr_y - y);
+    drawGoal(goal_x - fr_x, fr_y - goal_y);
+    drawWalls(fr_x, fr_y);
+    drawGrounds(fr_x, fr_y);
+    drawTime();
+  }
+}
+
+void drawLogoScreen() {
+  M5.Lcd.fillScreen(TFT_BLACK);
+  /* add logo screen loading here */
+}
+
+void goalReached(int x, int y) {
+  if (x - goal_x <= 10 && goal_x - x <= 10  && y - goal_y <= 20 && goal_y - y <= 20) {
+    inGame = false;
+    unsigned long t = millis() - trial_time;
+    /* add submit score code here */
+    drawLogoScreen();
+  }
 }
 
 bool leftIsWall(int x, int y) {
@@ -204,7 +218,7 @@ void charaMoveLeft() {
     else {
       if (M5.BtnC.wasPressed()) {energy = 100; charaMoveLeftJump();}
     }
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -216,7 +230,7 @@ void charaMoveLeftJump() {
     if(!leftIsWall(x, y)) {x--;}
     if(energy > 0 && !topIsGround(x, y)) {y++; energy--;}
     else {falling = true; energy = 0; charaFallLeft();}
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -240,7 +254,7 @@ void charaMoveRight() {
     else {
       if (M5.BtnC.wasPressed()) {energy = 100; charaMoveRightJump();}
     }
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -252,7 +266,7 @@ void charaMoveRightJump() {
     if(!rightIsWall(x, y)) {x++;}
     if(energy > 0 && !topIsGround(x, y)) {y++; energy--;}
     else {falling = true; energy = 0; charaFallRight();}
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -277,7 +291,7 @@ void charaJump() {
       else if (M5.BtnB.isPressed()) {charaMoveRightJump();}
     }
     else {falling = true; energy = 0; charaFall();}
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -292,7 +306,7 @@ void charaFall() {
     else {
       if (botIsGround(x, y)) {falling = false;}
       else {y--;}
-      if (goalReached(x, y)) {inGame = false;}
+      goalReached(x, y);
       draw();
       M5.update();
       delay(10);
@@ -305,7 +319,7 @@ void charaFallLeft() {
     if(!leftIsWall(x, y)) {x--;}
     if (botIsGround(x, y)) {falling = false;}
     else {y--;}
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -319,7 +333,7 @@ void charaFallRight() {
     if(!rightIsWall(x, y)) {x++;} 
     if (botIsGround(x, y)) {falling = false;}
     else {y--;}
-    if (goalReached(x, y)) {inGame = false;}
+    goalReached(x, y);
     draw();
     M5.update();
     delay(10);
@@ -330,7 +344,7 @@ void charaFallRight() {
 
 void setup() {
   M5.begin();
-  inGame = true;
+  inGame = false;
   
   fr_x_min = wall_x[0] - 50;
   fr_x_max = wall_x[wall_n - 1] + 50 - M5.Lcd.width();
@@ -356,7 +370,7 @@ void setup() {
   memset(old_ground_lcd_x1, -1, ground_n * sizeof(int));
   memset(old_ground_lcd_x2, -1, ground_n * sizeof(int));
 
-  draw();
+  drawLogoScreen();
 }
 
 void loop() {
@@ -375,6 +389,7 @@ void loop() {
       charaFall();
     }
     else {
+      drawTime();
       M5.update();
     }
   }
@@ -382,6 +397,7 @@ void loop() {
     if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
       x = 20; y = 221;
       inGame = true;
+      trial_time = millis();
       draw();
       M5.update();
     }
