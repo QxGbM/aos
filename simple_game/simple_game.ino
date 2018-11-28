@@ -9,6 +9,7 @@
 #include <time.h>
 
 bool inGame = false;
+bool startClock = true;
 
 int x = 20, y = 221;
 int energy = 0;
@@ -157,21 +158,48 @@ void draw() {
     drawGoal(goal_x - fr_x, fr_y - goal_y);
     drawWalls(fr_x, fr_y);
     drawGrounds(fr_x, fr_y);
+  }
+  if (inGame && !startClock) {
     drawTime();
   }
 }
 
 void drawLogoScreen() {
   M5.Lcd.fillScreen(TFT_BLACK);
-  /* add logo screen loading here */
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setTextColor(TFT_YELLOW);
+  M5.Lcd.setCursor(80, 80);
+  M5.Lcd.print("TEAM 810 GAME");
+  M5.Lcd.setCursor(60, 120);
+  M5.Lcd.setTextColor(TFT_BLUE);
+  M5.Lcd.print("Press Any Button"); 
+  M5.Lcd.setCursor(110, 150);
+  M5.Lcd.print("to Start");  
+}
+
+void drawGameOverScreen(double time) {
+  M5.Lcd.fillRect(55, 0, 215, 16, TFT_BLACK);
+  
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setTextColor(TFT_YELLOW);
+  M5.Lcd.setCursor(90, 80);
+  M5.Lcd.print("FINISHED!");
+  M5.Lcd.setCursor(25, 120);
+  M5.Lcd.setTextColor(TFT_BLUE);
+  M5.Lcd.print("time: ");
+  M5.Lcd.print(time);
+  M5.Lcd.print(" seconds");
 }
 
 void goalReached(int x, int y) {
   if (x - goal_x <= 10 && goal_x - x <= 10  && y - goal_y <= 20 && goal_y - y <= 20) {
     inGame = false;
     unsigned long t = millis() - trial_time;
+    
+    double time = t / 1000.;
+    drawGameOverScreen(time);
     /* add submit score code here */
-    drawLogoScreen();
+    startClock = true;
   }
 }
 
@@ -371,7 +399,11 @@ void setup() {
 
 void loop() {
   if (inGame) {
-    if (M5.BtnA.wasPressed()) {
+    if ((M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) && startClock) {
+      trial_time = millis();
+      startClock = false;
+    }
+    else if (M5.BtnA.wasPressed()) {
       charaMoveLeft();
     }
     else if (M5.BtnB.wasPressed()) {
@@ -385,15 +417,16 @@ void loop() {
       charaFall();
     }
     else {
-      drawTime();
+      if (!startClock) {
+        drawTime();
+      }
       M5.update();
     }
-  }
-  else {
+  } else {
     if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
       x = 20; y = 221;
       inGame = true;
-      trial_time = millis();
+      M5.Lcd.fillScreen(TFT_BLACK);
       draw();
       M5.update();
     }
