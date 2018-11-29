@@ -1,7 +1,7 @@
 # aos
-# authors: team-810
+authors: team-810
 
-First commit: 11.26
+# First commit: 11.26
 
 Button functions finalized, ready for debugging.
 
@@ -16,3 +16,8 @@ Early release of the jump button causes the character to fall. Falling is 1 unit
 Falling should occur even if no button is pressed. Should not fall below the ground.
 
 Current setting: ground level: 0, left wall: -1000, right wall: 1000.
+
+# Second commit: 11.27
+
+Drawing functions finished. Added a goal function and another layer of ground.
+
