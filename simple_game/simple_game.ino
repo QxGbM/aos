@@ -272,6 +272,7 @@ void charaMoveLeftJump() {
 }
 
 void charaMoveRight() {
+
   while (!M5.BtnB.isReleased() && inGame) {
     if(!rightIsWall(x, y)) {x++;}
     if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallRight();}
@@ -292,6 +293,7 @@ void charaMoveRightJump() {
     else {falling = true; energy = 0; charaFallRight();}
     goalReached(x, y);
     draw();
+
     M5.update();
     delay(10);
   }
