@@ -10,6 +10,7 @@
 
 bool inGame = false;
 bool startClock = true;
+bool onlyOnce = true;
 
 int x = 20, y = 221;
 int energy = 0;
@@ -178,17 +179,25 @@ void drawLogoScreen() {
 }
 
 void drawGameOverScreen(double time) {
-  M5.Lcd.fillRect(55, 0, 215, 16, TFT_BLACK);
-  
-  M5.Lcd.setTextSize(2);
-  M5.Lcd.setTextColor(TFT_YELLOW);
-  M5.Lcd.setCursor(90, 80);
-  M5.Lcd.print("FINISHED!");
-  M5.Lcd.setCursor(25, 120);
-  M5.Lcd.setTextColor(TFT_BLUE);
-  M5.Lcd.print("time: ");
-  M5.Lcd.print(time);
-  M5.Lcd.print(" seconds");
+  if (onlyOnce) {
+    M5.Lcd.fillRect(55, 0, 215, 16, TFT_BLACK);
+    
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setTextColor(TFT_YELLOW);
+    M5.Lcd.setCursor(90, 80);
+    M5.Lcd.print("FINISHED!");
+    M5.Lcd.setCursor(25, 110);
+    M5.Lcd.setTextColor(TFT_BLUE);
+    M5.Lcd.print("time: ");
+    M5.Lcd.print(time);
+    M5.Lcd.print(" seconds");
+    M5.Lcd.setCursor(40, 150);
+    M5.Lcd.setTextColor(TFT_CYAN);
+    M5.Lcd.print("press any button");
+    M5.Lcd.setCursor(55, 180);
+    M5.Lcd.print("to play again");
+    onlyOnce = false;
+  }
 }
 
 void goalReached(int x, int y) {
@@ -240,12 +249,11 @@ void charaMoveLeft() {
     if(!leftIsWall(x, y)) {x--;}
     if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallLeft();}
     else {
-      if (M5.BtnC.wasPressed()) {energy = 100; charaMoveLeftJump();}
+      if (M5.BtnC.wasPressed()) {energy = 60; charaMoveLeftJump();}
     }
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
 }
 
@@ -257,7 +265,6 @@ void charaMoveLeftJump() {
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
   if (M5.BtnC.wasReleased()) {
     if (!botIsGround(x, y)) {
@@ -276,12 +283,11 @@ void charaMoveRight() {
     if(!rightIsWall(x, y)) {x++;}
     if(!botIsGround(x, y)) {falling = true; energy = 0; charaFallRight();}
     else {
-      if (M5.BtnC.wasPressed()) {energy = 100; charaMoveRightJump();}
+      if (M5.BtnC.wasPressed()) {energy = 60; charaMoveRightJump();}
     }
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
 }
 
@@ -293,7 +299,6 @@ void charaMoveRightJump() {
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
   if (M5.BtnC.wasReleased()) {
     if (!botIsGround(x, y)) {
@@ -318,7 +323,6 @@ void charaJump() {
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
   if (!botIsGround(x, y)) {falling = true; energy = 0; charaFall();}
 }
@@ -333,7 +337,6 @@ void charaFall() {
       goalReached(x, y);
       draw();
       M5.update();
-      delay(10);
     }
   }
 }
@@ -346,7 +349,6 @@ void charaFallLeft() {
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
   if (falling) {charaFall();}
   else if (!M5.BtnA.isReleased()) {charaMoveLeft();}
@@ -360,7 +362,6 @@ void charaFallRight() {
     goalReached(x, y);
     draw();
     M5.update();
-    delay(10);
   }
   if (falling) {charaFall();}
   else if (!M5.BtnB.isReleased()) {charaMoveRight();}
@@ -410,7 +411,7 @@ void loop() {
       charaMoveRight();
     }
     else if (M5.BtnC.wasPressed() && !falling) {
-      energy = 100;
+      energy = 60;
       charaJump();
     }
     else if (falling) {
@@ -426,6 +427,7 @@ void loop() {
     if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
       x = 20; y = 221;
       inGame = true;
+      onlyOnce = true;
       M5.Lcd.fillScreen(TFT_BLACK);
       draw();
       M5.update();
