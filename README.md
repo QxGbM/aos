@@ -21,3 +21,12 @@ Current setting: ground level: 0, left wall: -1000, right wall: 1000.
 
 Drawing functions finished. Added a goal function and another layer of ground.
 
+# Third commit: 11.28
+
+Added starting and ending screens
+
+# Fourth commit: 11.29
+
+Changed movement so that there is 'no' delay
+
+Changed jump height so that the user will be able to jump as high as 60 units at most
