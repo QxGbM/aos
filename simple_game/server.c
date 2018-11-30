@@ -1,3 +1,21 @@
+/* 
+ *  Project: Simple Game
+ *  Team: 810
+ *  Part: Liang Wei
+ *  
+ *  It's a classic server-client program using TCP/IP socket API.
+ *  I'm not gonna cover the details.
+ *  
+ *  Usage:
+ *    $ echo -1 > log.data
+ *    $ gcc server.c & ./a.out 2468
+ *    
+ *    It should be runnable on Linux and maybe MacOS.
+ *    And remember it should be run on your server, not the Arduino. 
+ */
+
+
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>

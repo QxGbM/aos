@@ -3,14 +3,20 @@
  *  Team: 810
  *  Part: Liang Wei
  *  
+ *  Warning:
+ *  
+ *  1) Don't forget to replace the ssid, password and server variables with your true WiFi ssid and password.
+ *  2) Don't forget to chage the server[] variant to the real IP address of your server.
+ *  3) I set the default port number on server as 2468, if you like you can change it.
+ *  
+ *  
  *  Usage:
  *  
  *  WiFiTest():
  *    Just a test function, meaningless.
  * 
  *  int WiFiConnection():
- *    You can use it to establish a WiFi connection.
- *    Don't forget to replace the ssid, password and server variables with your true WiFi ssid and password.
+ *    You can use it to establish a WiFi connection. *    
  *    Those variables can be found in the front of this source code.
  *    It will return 0.
  *    And I set the port number to 2468.
@@ -19,9 +25,9 @@
  *  double getHistory():
  *    It can be used to get the best score from server.
  *    I initialed the best score as -1 on the server.
- *    Because -1 in unsigned integer is the maximum. 
+ *    Because the signed integer -1 is the maximum in unsigned integers.
  *    It can make the comparison simpler.
- *    This function returns a double float number in seconds.
+ *    This function returns a double float number indicating seconds.
  *  
  *  int updateScore(double timeinseconds)
  *    When user completes a game, it can be used to take the current score ( time in seconds )
@@ -39,7 +45,7 @@ const char* ssid     = "shudo-lab";
 const char* password = "shudowireless";
 
 
-byte server[] = {172,16,0,36};
+byte server[] = {172,16,0,22};
 const int serverPortNo = 2468;  
 
 
@@ -59,7 +65,7 @@ int WiFiTest(){
 }
 
 int WiFiConnect(){
-    delay(10);
+    //delay(10);
     Serial.println();
     Serial.println();
     Serial.print("Connecting to ");
