@@ -211,7 +211,7 @@ void goalReached(int x, int y) {
     drawGameOverScreen(time);
     
     /* add submit score code here */
-    Serial.println("You have reached the gole.");
+    Serial.println("You have reached the goal.");
     updateScore(time);
     startClock = true;
   }
