@@ -8,6 +8,8 @@
 #include <M5Stack.h>
 #include <time.h>
 
+#include "network.h"
+
 bool inGame = false;
 bool startClock = true;
 bool onlyOnce = true;
@@ -207,7 +209,10 @@ void goalReached(int x, int y) {
     
     double time = t / 1000.;
     drawGameOverScreen(time);
+    
     /* add submit score code here */
+    Serial.println("You have reached the goal.");
+    updateScore(time);
     startClock = true;
   }
 }
@@ -371,6 +376,7 @@ void charaFallRight() {
 
 void setup() {
   M5.begin();
+  WiFiConnect();
   inGame = false;
   
   fr_x_min = wall_x[0] - 50;
